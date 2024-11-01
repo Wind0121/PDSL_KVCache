@@ -4,7 +4,7 @@ datasets = ["narrativeqa", "qasper", "multifieldqa_en", "multifieldqa_zh", "hotp
             "dureader", "gov_report", "qmsum", "multi_news", "vcsum", "trec", "triviaqa", "samsum", "lsht", \
             "passage_count", "passage_retrieval_en", "passage_retrieval_zh", "lcc", "repobench-p"]
 
-data = load_dataset('json', data_files=f'/home/zk/LongBench/qasper.jsonl')
+data = load_dataset('json', data_files=f'/home/zk/LongBenchDataset/qasper.jsonl')
 
 
 data_all = [data[data_sample] for data_sample in data]

@@ -306,7 +306,7 @@ if __name__ == '__main__':
             os.makedirs(f"pred_e/{write_model_name}")
         out_path = f"pred_e/{write_model_name}/{dataset}.jsonl"
     else:
-        data = load_dataset('json', data_files=f'/home/zk/LongBench/{dataset}.jsonl')
+        data = load_dataset('json', data_files=f'/home/zk/LongBenchDataset/{dataset}.jsonl')
         if not os.path.exists(f"pred_e/{write_model_name}"):
             os.makedirs(f"pred_e/{write_model_name}")
         out_path = f"pred_e/{write_model_name}/{dataset}.jsonl"
