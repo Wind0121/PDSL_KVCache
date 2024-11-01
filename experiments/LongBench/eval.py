@@ -100,17 +100,10 @@ if __name__ == '__main__':
             score = scorer_e(dataset, predictions, answers, lengths, all_classes)
         else:
             score = scorer(dataset, predictions, answers, all_classes)
-            if dataset == 'qasper':
-                score_e = scorer_e(dataset, predictions, answers, lengths, all_classes)
         scores[dataset] = score
-        # if dataset == 'qasper':
-        #     scores[dataset + '_e'] = score_e
     if args.e:
-        out_path = f"H2O/results/{args.model}/result.json"
+        out_path = f"pred_e/{args.model}/result.json"
     else:
-        out_path = f"H2O/results/{args.model}/result.json"
-        # out_path_e = f"pred/{args.model}/result_e.json"
-        # with open(out_path_e, "w") as f:
-        #     json.dump(score_e, f, ensure_ascii=False, indent=4)
+        out_path = f"pred_e/{args.model}/result.json"
     with open(out_path, "w") as f:
         json.dump(scores, f, ensure_ascii=False, indent=4)
