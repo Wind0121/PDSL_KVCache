@@ -78,7 +78,7 @@ def get_pred_single_gpu(data, max_length, max_gen,
     model, tokenizer = load_model_and_tokenizer(model2path[model_name], model_name, device = "cuda", compress=compress)
     device = model.device
     printed = False
-    for json_obj in tqdm(data):
+    for row in tqdm(data['train']):
         ############################################################################################################
         # load compress args
         if compress:
@@ -97,7 +97,7 @@ def get_pred_single_gpu(data, max_length, max_gen,
                 model.model.layers[i].self_attn.config.pooling = pooling
         ############################################################################################################
         
-        prompt = prompt_format.format(**json_obj)
+        prompt = prompt_format.format(**row)
         # truncate to fit max_length (we suggest truncate in the middle, since the left and right side may contain crucial instructions)
         tokenized_prompt = tokenizer(prompt, truncation=False, return_tensors="pt").input_ids[0]
         if "chatglm3" in model_name:
@@ -137,7 +137,7 @@ def get_pred_single_gpu(data, max_length, max_gen,
         pred = tokenizer.decode(output[context_length:], skip_special_tokens=True)
         pred = post_process(pred, model_name)
         with open(out_path, "a", encoding="utf-8") as f:
-            json.dump({"pred": pred, "answers": json_obj["answers"], "all_classes": json_obj["all_classes"], "length": json_obj["length"]}, f, ensure_ascii=False)
+            json.dump({"pred": pred, "answers": row["answers"], "all_classes": row["all_classes"], "length": row["length"]}, f, ensure_ascii=False)
             f.write('\n')
 
 
@@ -306,14 +306,13 @@ if __name__ == '__main__':
             os.makedirs(f"pred_e/{write_model_name}")
         out_path = f"pred_e/{write_model_name}/{dataset}.jsonl"
     else:
-        data = load_dataset('THUDM/LongBench', dataset, split='test')
+        data = load_dataset('json', data_files=f'/home/zk/LongBench/{dataset}.jsonl')
         if not os.path.exists(f"pred_e/{write_model_name}"):
             os.makedirs(f"pred_e/{write_model_name}")
         out_path = f"pred_e/{write_model_name}/{dataset}.jsonl"
     prompt_format = dataset2prompt[dataset]
     max_gen = dataset2maxlen[dataset]
-    data_all = [data_sample for data_sample in data]
     if compress_args is not None:
-        get_pred_single_gpu(data_all, max_length, max_gen, prompt_format, dataset, model_name, model2path, out_path, compress, **compress_args)
+        get_pred_single_gpu(data, max_length, max_gen, prompt_format, dataset, model_name, model2path, out_path, compress, **compress_args)
     else:
-        get_pred_single_gpu(data_all, max_length, max_gen, prompt_format, dataset, model_name, model2path, out_path, compress)
+        get_pred_single_gpu(data, max_length, max_gen, prompt_format, dataset, model_name, model2path, out_path, compress)
