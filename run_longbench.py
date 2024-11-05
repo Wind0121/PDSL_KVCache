@@ -177,7 +177,6 @@ def main(args):
 
     os.makedirs(os.path.join(args.save_dir, f"{model_name}_{args.max_capacity_prompts}", args.dataset), exist_ok=True)
 
-    fout = open(os.path.join(args.save_dir, f"{model_name}_{args.max_capacity_prompts}", args.dataset, f"{args.method}.json"), "w")
      
     for i in tqdm(range(0, len(prompts), args.eval_batch_size)):
         
@@ -277,8 +276,8 @@ def main(args):
             example["all_classes"] = batch_all_classess[j]
             example["_id"] = batch__ids[j]
 
-
-            fout.write(json.dumps(example) + "\n")
+            with open(os.path.join(args.save_dir, f"{model_name}_{args.max_capacity_prompts}", args.dataset, f"{args.method}.json"), "a", encoding="utf-8") as fout:
+                fout.write(json.dumps({"pred": example["pred"], "answers": example["answers"], "all_classes": example["all_classes"], "length": example["length"]}) + "\n")
     
     
 
@@ -371,7 +370,8 @@ if __name__ == "__main__":
         
 
     for idx, dataset in enumerate(datasets):
-        
+        if dataset != 'qasper':
+            continue
         print(f"Working on max_capacity_prompts {args.max_capacity_prompts} dataset {dataset} - {idx}/{len(datasets)}")
         
         args.dataset = dataset

@@ -63,7 +63,7 @@ class PyramidKVCluster():
         steps = (max_num - min_num) // (self.num_hidden_layers - 1)
         max_capacity_prompt = max_num - self.layer_idx * steps
         
-        print(f"PyramidKV max_capacity_prompt {max_capacity_prompt}")
+        # print(f"PyramidKV max_capacity_prompt {max_capacity_prompt}")
         if q_len < self.max_capacity_prompt:
             return key_states, value_states
         elif q_len < (self.max_capacity_prompt - self.window_size) * 2:
@@ -142,7 +142,7 @@ class SnapKVCluster():
         assert key_states.shape[-2] == query_states.shape[-2]
         bsz, num_heads, q_len, head_dim = query_states.shape
         
-        print(f"SnapKV max_capacity_prompt {self.max_capacity_prompt}")
+        # print(f"SnapKV max_capacity_prompt {self.max_capacity_prompt}")
         
         if q_len < self.max_capacity_prompt:
             return key_states, value_states
@@ -198,7 +198,7 @@ class CAMKVCluster:
         assert key_states.shape[-2] == query_states.shape[-2]
         bsz, num_heads, q_len, head_dim = query_states.shape
         
-        print(f"CAM max_capacity_prompt {self.max_capacity_prompt}")
+        # print(f"CAM max_capacity_prompt {self.max_capacity_prompt}")
         
         if q_len < self.max_capacity_prompt:
             return key_states, value_states
@@ -278,7 +278,7 @@ class H2OKVCluster():
         assert key_states.shape[-2] == query_states.shape[-2]
         bsz, num_heads, q_len, head_dim = query_states.shape
         
-        print(f"H2O max_capacity_prompt {self.max_capacity_prompt}")
+        # print(f"H2O max_capacity_prompt {self.max_capacity_prompt}")
         
         if q_len < self.max_capacity_prompt:
             return key_states, value_states
@@ -333,7 +333,7 @@ class StreamingLLMKVCluster():
         assert key_states.shape[-2] == query_states.shape[-2]
         bsz, num_heads, q_len, head_dim = query_states.shape
         
-        print(f"StreamingLLM max_capacity_prompt {self.max_capacity_prompt}")
+        # print(f"StreamingLLM max_capacity_prompt {self.max_capacity_prompt}")
         
         if q_len < self.max_capacity_prompt:
             return key_states, value_states

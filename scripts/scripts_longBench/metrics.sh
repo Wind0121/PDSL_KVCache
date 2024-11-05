@@ -1,5 +1,5 @@
 
-results_dir=$1
+results_dir=/home/zk/PyramidKV/results_long_bench/meta-llama-3-8b-instruct_2048
 
 
 python3 eval.py \
