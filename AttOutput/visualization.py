@@ -54,7 +54,7 @@ def manual_infer_with_llama_with_attention(prompt, max_length=1000):
 
         input_ids = torch.cat([input_ids, next_token], dim=-1)
 
-        if next_token == tokenizer.eos_token_id:
+        if next_token in tokenizer.all_special_ids:
             break
 
     print(" ".join(generated_text[pos:]), flush=True)
