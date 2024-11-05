@@ -73,6 +73,7 @@ model2prompt = {
 # }
 
 model2maxlen = {
+    "longchat": 31500,
     "llama2": 3950,
     "llama-2": 3950,
     "llama3": 7950,

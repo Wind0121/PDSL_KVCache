@@ -7,8 +7,8 @@ import pandas as pd
 import json
 import glob
 
-FOLDER_PATH = "./results_needle/results/mistral2_7b_pyramidkv_128_run/"
-MODEL_NAME = "mistral_2_7b"
+FOLDER_PATH = "./results_needle/results/longchat-7b-v1.5-32k_pyramidkv_64/"
+MODEL_NAME = "longchat-7b-v1.5-32k"
 PRETRAINED_LEN=33000
 
 
