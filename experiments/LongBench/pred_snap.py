@@ -292,7 +292,7 @@ if __name__ == '__main__':
     if args.compress_args_path:
         compress_args = json.load(open(os.path.join('config', args.compress_args_path), "r"))
         compress = True
-        write_model_name = model_name + args.compress_args_path.split(".")[0]
+        write_model_name = model_name
         replace_llama()
         replace_mistral()
         replace_mixtral()
@@ -301,15 +301,15 @@ if __name__ == '__main__':
         compress_args = None
         write_model_name = model_name
     if args.e:
-        data = load_dataset('THUDM/LongBench', f"{dataset}_e", split='test')
+        data = load_dataset('json', data_files=f'/home/zk/LongBenchDataset/{dataset}.jsonl')
         if not os.path.exists(f"pred_e/{write_model_name}"):
             os.makedirs(f"pred_e/{write_model_name}")
         out_path = f"pred_e/{write_model_name}/{dataset}.jsonl"
     else:
         data = load_dataset('json', data_files=f'/home/zk/LongBenchDataset/{dataset}.jsonl')
-        if not os.path.exists(f"pred_e/{write_model_name}"):
-            os.makedirs(f"pred_e/{write_model_name}")
-        out_path = f"pred_e/{write_model_name}/{dataset}.jsonl"
+        if not os.path.exists(f"pred/{write_model_name}"):
+            os.makedirs(f"pred/{write_model_name}")
+        out_path = f"pred/{write_model_name}/{dataset}.jsonl"
     prompt_format = dataset2prompt[dataset]
     max_gen = dataset2maxlen[dataset]
     if compress_args is not None:

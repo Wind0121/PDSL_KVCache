@@ -80,7 +80,7 @@ if __name__ == '__main__':
     if args.e:
         path = f"pred_e/{args.model}/"
     else:
-        path = f"pred_e/{args.model}/"
+        path = f"pred/{args.model}/"
     all_files = os.listdir(path)
     print("Evaluating on:", all_files)
     for filename in all_files:
@@ -104,6 +104,6 @@ if __name__ == '__main__':
     if args.e:
         out_path = f"pred_e/{args.model}/result.json"
     else:
-        out_path = f"pred_e/{args.model}/result.json"
+        out_path = f"pred/{args.model}/result.json"
     with open(out_path, "w") as f:
         json.dump(scores, f, ensure_ascii=False, indent=4)
