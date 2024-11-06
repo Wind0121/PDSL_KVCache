@@ -157,7 +157,7 @@ class LLMNeedleHaystackTester:
                     attn_implementation=self.attn_implementation,
                     device_map="auto",
                     low_cpu_mem_usage=True, 
-                    # use_cache=False
+                    use_cache=True
                     ).eval()
 
 
@@ -177,7 +177,7 @@ class LLMNeedleHaystackTester:
                     attn_implementation=self.attn_implementation,
                     device_map="auto",
                     low_cpu_mem_usage=True, 
-                    # use_cache=False
+                    use_cache=True
                     ).eval()
 
                 

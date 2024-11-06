@@ -6,12 +6,13 @@ mkdir -p ./results_needle/logs/
 mkdir -p ./results_needle/img/
 
 
-METHOD='pyramidkv'       # ['full', 'pyramidkv', 'snapkv', 'streamingllm', 'h2o', 'cam']
-MAX_CAPACITY_PROMPT=64  # [64, 96, 128, 256, 512, 1024, 2048, ...]
+METHOD='h2o'       # ['full', 'pyramidkv', 'snapkv', 'streamingllm', 'h2o', 'cam']
+MAX_CAPACITY_PROMPT=128  # [64, 96, 128, 256, 512, 1024, 2048, ...]
 attn_implementation="flash_attention_2" # Support "flash_attention_2", "sdpa", "None".
 TAG=test
-model_path="lmsys/longchat-7b-v1.5-32k"
-model_name="longchat-7b-v1.5-32k"
+model_path="/data/llm/Meta-Llama-3-8B-Instruct"
+model_name="Meta-Llama-3-8B-Instruct"
+save_file=${model_name}_${METHOD}_${MAX_CAPACITY_PROMPT}
 # For Llama3-8b
 
 (
@@ -22,10 +23,10 @@ python -u run_needle_in_haystack.py --s_len 1000 --e_len 8001\
     --step 100 \
     --method $METHOD \
     --max_capacity_prompt $MAX_CAPACITY_PROMPT \
-    --model_version ${model_name}_${METHOD}_${MAX_CAPACITY_PROMPT}
-) 2>&1  | tee results_needle/logs/${model_name}_${METHOD}_${MAX_CAPACITY_PROMPT}.log
+    --model_version ${save_file}
+) 2>&1  | tee results_needle/logs/${save_file}.log
 
-
+python scripts/scripts_needle/visualize.py --folder_path ./results_needle/results/${save_file}/ --model_name ${model_name}
 
 # For Mistral
 

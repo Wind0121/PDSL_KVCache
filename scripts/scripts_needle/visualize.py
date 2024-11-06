@@ -1,4 +1,4 @@
-
+import argparse
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -12,12 +12,12 @@ MODEL_NAME = "longchat-7b-v1.5-32k"
 PRETRAINED_LEN=33000
 
 
-def main():
+def main(args):
     # Path to the directory containing JSON results
-    folder_path = FOLDER_PATH
+    folder_path = args.folder_path
     if("/" in folder_path):
         model_name = folder_path.split("/")[-2]
-    else: model_name = MODEL_NAME
+    else: model_name = args.model_name
     print("model_name = %s" % model_name)
 
     # Using glob to find all json files in the directory
@@ -84,8 +84,7 @@ def main():
 
 
     # More aesthetics
-    model_name_ = MODEL_NAME
-    plt.title(f'Pressure Testing {model_name_} \nFact Retrieval Across Context Lengths ("Needle In A HayStack")', fontsize=18)  # Adds a title
+    plt.title(f'Pressure Testing {model_name} \nFact Retrieval Across Context Lengths ("Needle In A HayStack")', fontsize=18)  # Adds a title
     plt.xlabel('Token Limit', fontsize=18)  # X-axis label
     plt.ylabel('Depth Percent', fontsize=18)  # Y-axis label
     plt.xticks(rotation=45, fontsize=18)  # Rotates the x-axis labels to prevent overlap
@@ -101,4 +100,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--folder_path", type=str)
+    parser.add_argument("--model_name", type=str)
+    args = parser.parse_args()
+    main(args)
