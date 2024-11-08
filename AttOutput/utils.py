@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import os
 import numpy as np
+import subprocess
 
 def load(model_name_or_path):
     print(f"Loading model from {model_name_or_path} ...")
@@ -127,3 +128,15 @@ def save_picture_pdf(image_folder, output_pdf_path, remove=False):
     if remove:
         for image in images:
             os.remove(os.path.join(image_folder, image))
+
+def upload_file_to_oss(file_path):
+    file_name = file_path.split("/")[-1]
+    try:
+        upload_command = [ "aliyun", "oss", "cp", file_path, f"oss://kv-cache/", "-e", "oss-accelerate.aliyuncs.com" ]
+        subprocess.run(upload_command, check=True)
+        url = f"https://kv-cache.oss-cn-hangzhou.aliyuncs.com/{file_name}"
+        print("URL: ", url)
+        return url
+    except subprocess.CalledProcessError as e:
+        print("OSS upload failed: ", e)
+        return None

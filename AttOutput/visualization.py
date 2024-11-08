@@ -9,7 +9,7 @@ import os
 from utils import load, save_picture_pdf, draw_attention_scores
 
 method = "PyramidKV"
-model_checkpoint_path = "/data/llm/llama-2-7b-hf"
+model_checkpoint_path = "/data/llm/Mistral-7B-Instruct-v0.2"
 model_name = model_checkpoint_path.split('/')[-1]
 model, tokenizer = load(model_checkpoint_path)
 
@@ -25,7 +25,7 @@ if not os.path.exists(directory):
 
 
 
-def manual_infer_with_llama_with_attention(prompt, max_length=1000):
+def manual_infer_with_llama_with_attention(prompt, max_length=100):
 
     input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
     all_layers_attentions = [] 
@@ -65,10 +65,7 @@ def manual_infer_with_llama_with_attention(prompt, max_length=1000):
 
 # input_prompt = "USER: Compose an engaging travel blog post about a recent trip to Hawaii, highlighting cultural experiences and must-see attractions.\n\nASSISTANT: "
 input_prompt = """
-[INST] <<SYS>>
-             You are given some documents, and you need to answer a question based on these documents.
-            Your answer should be less than five words.
-              
+[INST] <<SYS>>You are given some documents, and you need to answer a question based on these documents.Your answer should be less than five words.    
 <</SYS>>
 Document: Roman Republic After having declined in size following the subjugation of the Mediterranean, the Roman navy underwent short-term upgrading and revitalisation in the late Republic to meet several 
 new demands. Under Caesar, an invasion fleet was assembled in the English Channel to allow the invasion of Britannia; under Pompey, a large fleet was raised in the Mediterranean Sea to clear the sea of Cili
@@ -87,7 +84,7 @@ Answer:  [/INST]
 
 results, input_ids, all_layers_attentions = manual_infer_with_llama_with_attention(input_prompt)
 
-draw_attention_scores(all_layers_attentions, f'{directory}/output.png')
+draw_attention_scores(all_layers_attentions, f'{directory}/output0.png')
 
 
    
