@@ -8,16 +8,16 @@ from matplotlib.colors import LogNorm
 import os
 from utils import load, save_picture_pdf, draw_attention_scores
 
-model_checkpoint_path = "lmsys/longchat-7b-v1.5-32k"
+method = "PyramidKV"
+model_checkpoint_path = "/data/llm/llama-2-7b-hf"
 model_name = model_checkpoint_path.split('/')[-1]
-print(model_name)
 model, tokenizer = load(model_checkpoint_path)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 model.config.output_attention = True
 
-directory = f"assets/{model_name}"
+directory = f"assets/{model_name}/{method}"
 
 
 if not os.path.exists(directory):
