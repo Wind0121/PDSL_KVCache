@@ -37,7 +37,7 @@ def manual_infer_with_llama_with_attention(prompt, max_length=1000):
     pos = 0
     print(prompt, end=" ")
 
-    for _ in range(1):
+    for _ in range(max_length):
 
         raw_outputs = model(input_ids, output_attentions=True)
         output = raw_outputs.logits
@@ -88,7 +88,7 @@ input_prompt = "USER: Draft a professional email seeking your supervisor's feedb
 
 results, input_ids, all_layers_attentions= manual_infer_with_llama_with_attention(input_prompt)
 
-draw_attention_scores(all_layers_attentions, f'{directory}/{file_name}_4.png')
+draw_attention_scores(all_layers_attentions, f'{directory}/{file_name}_5.png')
 
 
    
