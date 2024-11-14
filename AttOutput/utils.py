@@ -72,7 +72,7 @@ def draw_attention_scores(attentions, output_path):
 
     plt.savefig(output_path, format='png', dpi=150)  # 文件名、格式和分辨率
 
-def draw_single_mean_attention(all_layers_attentions, input_ids, output_directory):
+def draw_single_mean_attention(all_layers_attentions, input_ids, output_directory, i=0):
     for layer_idx, attentions in enumerate(all_layers_attentions):
         attention = attentions * 10000
 
@@ -97,7 +97,7 @@ def draw_single_mean_attention(all_layers_attentions, input_ids, output_director
         plt.ylabel('Query Positions')
         plt.savefig(f'{output_directory}/layer{layer_idx}.png', dpi=150, format='png')
 
-    save_picture_pdf(f'{output_directory}', f'{output_directory}/output.pdf', True)
+    save_picture_pdf(f'{output_directory}', f'{output_directory}/output_{i}.pdf', True)
 
 def save_picture_pdf(image_folder, output_pdf_path, remove=False):
     # 定义图片文件夹和输出PDF文件名
