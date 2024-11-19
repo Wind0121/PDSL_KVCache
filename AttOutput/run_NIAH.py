@@ -1,6 +1,41 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import json
+import numpy as np
+
+def evaluate_on_attentions(attentions, query_length):
+  # 三组实验：
+  # 1. prompt0 的 query 在 context 部分的注意力与 context 本身的注意力对比
+  # 2. prompt1 的 query 在 context 部分的注意力与 context 本身的注意力对比
+  # 3. prompt0 和 prompt1 的 query 在 context 部分的注意力对比
+  
+  assert(len(attentions) == 2)
+  attentions_0, attentions_1 = attentions
+  query_length_0, query_length_1 = query_length
+
+  # 得到各层的mean值
+  attentions_0 = [torch.mean(attn, dim=1)[0] for attn in attentions_0]
+  attentions_1 = [torch.mean(attn, dim=1)[0] for attn in attentions_1]
+
+  # 得到各层的 context 本身的注意力
+  context_attentions_0 = [attention[-(query_length_0 + 1)][:-(query_length_0)].cpu().detach().numpy() for attention in attentions_0]
+  context_attentions_1 = [attention[-(query_length_1 + 1)][:-(query_length_1)].cpu().detach().numpy() for attention in attentions_1]
+  context_attentions_0 = [(attention - attention.min()) / (attention.max() - attention.min()) for attention in context_attentions_0]
+  context_attentions_1 = [(attention - attention.min()) / (attention.max() - attention.min()) for attention in context_attentions_1]
+  assert(context_attentions_0[0].shape[0] == context_attentions_1[0].shape[0])
+
+  # 得到各层 query 在 context 部分的注意力
+  query_attentions_0 = [attention[-1][:-(query_length_0)].cpu().detach().numpy() for attention in attentions_0]
+  query_attentions_1 = [attention[-1][:-(query_length_1)].cpu().detach().numpy() for attention in attentions_1]
+  query_attentions_0 = [(attention - attention.min()) / (attention.max() - attention.min()) for attention in query_attentions_0]
+  query_attentions_1 = [(attention - attention.min()) / (attention.max() - attention.min()) for attention in query_attentions_1]
+  assert(query_attentions_0[0].shape[0] == query_attentions_1[0].shape[0])
+
+  # test2
+  l2_dis_0 = [np.linalg.norm(context - query) for context, query in zip(context_attentions_0, query_attentions_0)]
+  l2_dis_1 = [np.linalg.norm(context - query) for context, query in zip(context_attentions_1, query_attentions_1)]
+  l2_dis_2 = [np.linalg.norm(query_0 - query_1) for query_0, query_1 in zip(query_attentions_0, query_attentions_1)]
+  return [l2_dis_0, l2_dis_1, l2_dis_2]
 
 
 def main():
@@ -45,10 +80,24 @@ def main():
               ]
   responses = [tokenizer.decode(output_id[0][input_id.shape[1]:], skip_special_tokens=True).strip() for output_id, input_id in zip(output_ids, input_ids)]
 
+  querys = [tokenizer(query, return_tensor="pt") for query in querys]
+  query_ids = [query['input_ids'].to(model.device) for query in querys]
+  query_length = [query_id.shape[1] for query_id in query_ids]
+  attentions =  [model(
+                      input_id, 
+                      output_attentions=True
+                  ).attentions
+                  for input_id in input_ids
+                ]
+  l2_dis = evaluate_on_attentions(attentions, query_length)
+
   result = {
     'model' : model_name,
     'needle' : needles,
-    'model_response' : responses
+    'model_response' : responses,
+    'l2_dis_0' : l2_dis[0],
+    'l2_dis_1' : l2_dis[1],
+    'l2_dis_2' : l2_dis[2]
   }
 
   with open(save_path, 'w') as f:

@@ -281,7 +281,7 @@ class LLMNeedleHaystackTester:
 
             if self.output_attentions and self.needle_num > 1:
                 querys = [self.enc(query, return_tensor="pt") for query in querys]
-                query_ids = [querys['input_ids'].to(self.model_to_test.device) for query in querys]
+                query_ids = [query['input_ids'].to(self.model_to_test.device) for query in querys]
                 query_length = [query_id.shape[1] for query_id in query_ids]
 
                 attentions = [self.model_to_test(
