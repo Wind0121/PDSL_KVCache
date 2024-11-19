@@ -58,7 +58,8 @@ class LLMNeedleHaystackTester:
                  print_ongoing_status = True, 
                  step=100, 
                  method='full', 
-                 attn_implementation='flash_attention_2'):
+                 attn_implementation='flash_attention_2',
+                 output_attentions=True):
         """        
         :param needle: The needle to be found in the haystack. Default is None.
         :param haystack_dir: The directory of text files to use as background context (or a haystack) in which the needle is to be found. Default is Paul Graham Essays.
@@ -106,7 +107,7 @@ class LLMNeedleHaystackTester:
         self.step = step
         self.method = method
         self.attn_implementation = attn_implementation
-
+        self.output_attentions = output_attentions
 
         self.model_version = model_version
         if(model_name_suffix is not None): self.model_version += "_" + model_name_suffix
@@ -182,7 +183,8 @@ class LLMNeedleHaystackTester:
         # Replace the following line with the appropriate prompt structure
         if(self.model_provider not in ["OpenAI", "Anthropic"]):
             test_format = [f"<|im_start|> This is a very long story book: <book> {context} </book>.\n Based on the content of the book, Question: {question}\nAnswer:" for question in self.retrieval_question]
-            return tuple(test_format)
+            querys = [f"\n Based on the content of the book, Question: {question}\nAnswer:" for question in self.retrieval_question]
+            return (tuple(test_format), tuple(querys))
         else: 
             return [
                 {
@@ -203,6 +205,41 @@ class LLMNeedleHaystackTester:
                 },
                 
             ]
+        
+    def evaluate_on_attentions(self, attentions, query_length):
+        # 三组实验：
+        # 1. prompt0 的 query 在 context 部分的注意力与 context 本身的注意力对比
+        # 2. prompt1 的 query 在 context 部分的注意力与 context 本身的注意力对比
+        # 3. prompt0 和 prompt1 的 query 在 context 部分的注意力对比
+        
+        assert(len(attentions) == 2)
+        attentions_0, attentions_1 = attentions
+        query_length_0, query_length_1 = query_length
+
+        # 得到各层的mean值
+        attentions_0 = [torch.mean(attn, dim=1)[0] for attn in attentions_0]
+        attentions_1 = [torch.mean(attn, dim=1)[0] for attn in attentions_1]
+
+        # 得到各层的 context 本身的注意力
+        context_attentions_0 = [attention[-(query_length_0 + 1)][:-(query_length_0)].cpu().detach().numpy() for attention in attentions_0]
+        context_attentions_1 = [attention[-(query_length_1 + 1)][:-(query_length_1)].cpu().detach().numpy() for attention in attentions_1]
+        context_attentions_0 = [(attention - attention.min()) / (attention.max() - attention.min()) for attention in context_attentions_0]
+        context_attentions_1 = [(attention - attention.min()) / (attention.max() - attention.min()) for attention in context_attentions_1]
+        assert(context_attentions_0[0].shape[0] == context_attentions_1[0].shape[0])
+
+        # 得到各层 query 在 context 部分的注意力
+        query_attentions_0 = [attention[-1][:-(query_length_0)].cpu().detach().numpy() for attention in attentions_0]
+        query_attentions_1 = [attention[-1][:-(query_length_1)].cpu().detach().numpy() for attention in attentions_1]
+        query_attentions_0 = [(attention - attention.min()) / (attention.max() - attention.min()) for attention in query_attentions_0]
+        query_attentions_1 = [(attention - attention.min()) / (attention.max() - attention.min()) for attention in query_attentions_1]
+        assert(query_attentions_0[0].shape[0] == query_attentions_1[0].shape[0])
+
+        # test2
+        l2_dis_0 = [np.linalg.norm(context - query) for context, query in zip(context_attentions_0, query_attentions_0)]
+        l2_dis_1 = [np.linalg.norm(context - query) for context, query in zip(context_attentions_1, query_attentions_1)]
+        l2_dis_2 = [np.linalg.norm(query_0 - query_1) for query_0, query_1 in zip(query_attentions_0, query_attentions_1)]
+        return [l2_dis_0, l2_dis_1, l2_dis_2]
+
 
     def evaluate_and_log(self, context_length, depth_percent):
         # Checks to see if you've already checked a length/percent/version.
@@ -218,7 +255,7 @@ class LLMNeedleHaystackTester:
         context = self.generate_context(context_length, depth_percent)
 
         # Prepare your message to send to the model you're going to evaluate
-        prompts = self.generate_prompt(context)
+        prompts, querys = self.generate_prompt(context)
 
         assert(isinstance(prompts, tuple))
 
@@ -242,6 +279,20 @@ class LLMNeedleHaystackTester:
             ]
             responses = [self.enc.decode(output_id[0][input_id.shape[1]:], skip_special_tokens=True).strip() for output_id, input_id in zip(output_ids, input_ids)]
 
+            if self.output_attentions and self.needle_num > 1:
+                querys = [self.enc(query, return_tensor="pt") for query in querys]
+                query_ids = [querys['input_ids'].to(self.model_to_test.device) for query in querys]
+                query_length = [query_id.shape[1] for query_id in query_ids]
+
+                attentions = [self.model_to_test(
+                    input_id, 
+                    output_attentions=True
+                ).attentions
+                for input_id in input_ids
+                ]
+
+                l2_dis = self.evaluate_on_attentions(attentions, query_length)
+
         
         print(responses)
         test_end_time = time.time()
@@ -260,6 +311,9 @@ class LLMNeedleHaystackTester:
             'model_response' : responses,
             'test_duration_seconds' : test_elapsed_time,
             'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'), 
+            'l2_dis_0' : l2_dis[0],
+            'l2_dis_1' : l2_dis[1],
+            'l2_dis_2' : l2_dis[2]
         }
 
         self.testing_results.append(results)
@@ -489,7 +543,8 @@ if __name__ == "__main__":
                                  context_lengths_max=args.e_len, 
                                  step=args.step, 
                                  method=args.method, 
-                                 attn_implementation=args.attn_implementation
+                                 attn_implementation=args.attn_implementation,
+                                 output_attentions=True
                                  )
 
     ht.start_test(args)
