@@ -2,6 +2,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import json
 import numpy as np
+import utils
 
 def get_same(A, B):
   count = 0
@@ -96,9 +97,9 @@ def evaluate_on_attentions(attentions, query_length):
   top_query_attention_1 = [attention[:int(0.15 * len(attention))] for attention in sort_query_attentions_1]
   top_query_attention_1 = [[pt[0] for pt in attention] for attention in top_query_attention_1]
 
-  inter_context0_query0 = [len(set(a) & set(b)) for a, b in zip(top_context_attention_0, top_query_attention_0)]
-  inter_context1_query1 = [len(set(a) & set(b)) for a, b in zip(top_context_attention_1, top_query_attention_1)]
-  inter_query0_query1 = [len(set(a) & set(b)) for a, b in zip(top_query_attention_0, top_query_attention_1)]
+  inter_context0_query0 = [1.0 * len(set(a) & set(b)) / len(a) for a, b in zip(top_context_attention_0, top_query_attention_0)]
+  inter_context1_query1 = [1.0 * len(set(a) & set(b)) / len(a) for a, b in zip(top_context_attention_1, top_query_attention_1)]
+  inter_query0_query1 = [1.0 * len(set(a) & set(b)) / len(a) for a, b in zip(top_query_attention_0, top_query_attention_1)]
 
   return (first_diff_loc_context0_query0, first_diff_loc_context1_query1, first_diff_loc_query0_query1), (l2_context0_query0, l2_context1_query1, l2_query0_query1), \
           (cos_context0_query0, cos_context1_query1,cos_query0_query1), (inter_context0_query0, inter_context1_query1, inter_query0_query1)
@@ -150,6 +151,10 @@ def main():
   query_ids = [query['input_ids'].to(model.device) for query in querys]
   query_length = [query_id.shape[1] for query_id in query_ids]
   attentions = [model(input_id, output_attentions=True).attentions for input_id in input_ids]
+
+  utils.draw_single_mean_attention(attentions[0], '', 'assets/NIAH', 0)
+  utils.draw_single_mean_attention(attentions[1], '', 'assets/NIAH', 1)
+
   first_diff, l2, cos, inter = evaluate_on_attentions(attentions, query_length)
 
   result = {
