@@ -66,6 +66,11 @@ def evaluate_on_attentions(attentions, query_length):
   sort_query_attentions_1 = [[(i, score) for i, score in enumerate(attention)] for attention in query_attentions_1]
   sort_query_attentions_1 = [sorted(layer_scores, key=lambda x: x[1], reverse=True) for layer_scores in sort_query_attentions_1]
 
+  sort_loc_query_0 = [sort_query_attentions_0[-1][i][0] for i in range(int(0.2 * len(sort_query_attentions_0[-1])))]
+  # sort_loc_query_0 = sorted(sort_loc_query_0)
+  sort_loc_query_1 = [sort_query_attentions_1[-1][i][0] for i in range(int(0.2 * len(sort_query_attentions_1[-1])))]
+  # sort_loc_query_1 = sorted(sort_loc_query_1)
+
   first_diff_loc_context0_query0 = []
   first_diff_loc_context1_query1 = []
   first_diff_loc_query0_query1 = []
@@ -102,7 +107,7 @@ def evaluate_on_attentions(attentions, query_length):
   inter_query0_query1 = [1.0 * len(set(a) & set(b)) / len(a) for a, b in zip(top_query_attention_0, top_query_attention_1)]
 
   return (first_diff_loc_context0_query0, first_diff_loc_context1_query1, first_diff_loc_query0_query1), (l2_context0_query0, l2_context1_query1, l2_query0_query1), \
-          (cos_context0_query0, cos_context1_query1,cos_query0_query1), (inter_context0_query0, inter_context1_query1, inter_query0_query1)
+          (cos_context0_query0, cos_context1_query1,cos_query0_query1), (inter_context0_query0, inter_context1_query1, inter_query0_query1), (sort_loc_query_0, sort_loc_query_1)
 
 
 def main():
@@ -145,7 +150,7 @@ def main():
                 )
                 for input_id in input_ids
               ]
-  responses = [tokenizer.decode(output_id[0][input_id.shape[1]:], skip_special_tokens=True).strip() for output_id, input_id in zip(output_ids, input_ids)]
+  responses = [tokenizer.decode(output_id[0][:], skip_special_tokens=True).strip() for output_id, input_id in zip(output_ids, input_ids)]
 
   querys = [tokenizer(query, return_tensors="pt") for query in querys]
   query_ids = [query['input_ids'].to(model.device) for query in querys]
@@ -155,7 +160,9 @@ def main():
   utils.draw_single_mean_attention(attentions[0], '', 'assets/NIAH', 0)
   utils.draw_single_mean_attention(attentions[1], '', 'assets/NIAH', 1)
 
-  first_diff, l2, cos, inter = evaluate_on_attentions(attentions, query_length)
+  first_diff, l2, cos, inter, sort_loc = evaluate_on_attentions(attentions, query_length)
+  h2_ids = [[output_id[0][i] for i in loc] for loc, output_id in zip(sort_loc, output_ids)]
+  h2_tokens = [[tokenizer.decode(h2_id, skip_special_tokens=True) for h2_id in ids] for ids in h2_ids]
 
   result = {
     'model' : model_name,
@@ -172,7 +179,9 @@ def main():
     'cos_query0_query1' : cos[2],
     'inter_context0_query0' : inter[0],
     'inter_context1_query1' : inter[1],
-    'inter_query0_query1' : inter[2]
+    'inter_query0_query1' : inter[2],
+    'h2_tokens_0' : h2_tokens[0],
+    'h2_tokens_1' : h2_tokens[1]
   }
 
   with open(save_path, 'w') as f:
