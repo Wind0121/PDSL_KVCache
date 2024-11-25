@@ -28,7 +28,7 @@ Settings.llm = HuggingFaceLLM(
 )
 
 # load data
-documents = SimpleDirectoryReader("data").load_data()
+documents = SimpleDirectoryReader("./data/example").load_data()
 # build index
 index = VectorStoreIndex.from_documents(documents)
 # build query_engine which use llm above
