@@ -22,17 +22,17 @@ Settings.embed_model = HuggingFaceEmbedding(model_name="/data/llm/bge-small-en-v
 # you can select other parameter
 Settings.llm = HuggingFaceLLM(
     query_wrapper_prompt=query_wrapper_prompt,
-    tokenizer_name="/data/llm/longchat-7b-v1.5-32k",
-    model_name="/data/llm/longchat-7b-v1.5-32k",
+    tokenizer_name="/data/llm/Qwen2.5-7B-Instruct",
+    model_name="/data/llm/Qwen2.5-7B-Instruct",
     device_map="auto",
 )
 
 # load data
-documents = SimpleDirectoryReader("./data/example").load_data()
+documents = SimpleDirectoryReader("./data/paper").load_data()
 # build index
 index = VectorStoreIndex.from_documents(documents)
 # build query_engine which use llm above
 query_engine = index.as_query_engine()
 # chat
-response = query_engine.query("What did the author do growing up?")
+response = query_engine.query("What is PagedAttention?")
 print(response)
