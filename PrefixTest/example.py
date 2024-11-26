@@ -11,7 +11,7 @@ def generate_random_prompt(len: int, tokenizer):
   prompt = tokenizer.decode(prompt_token_ids)
   return prompt
 
-def prefill_without_prefix(model, input_ids):
+def prefill_without_prefix(model, input_ids, past_key_values):
   start_time = time.perf_counter()
   outputs = model(
       input_ids=input_ids,
@@ -24,10 +24,8 @@ def prefill_without_prefix(model, input_ids):
   pred_token_ids = outputs.logits[:, -1, :].argmax(dim=-1)
   return outputs.past_key_values, elapsed_time, pred_token_ids
 
-def prefill_with_prefix(model, input_ids, past_key_values, prefix_hit_rate=1.0):
-  pos = int(min(int(input_ids.shape[1] * prefix_hit_rate), input_ids.shape[1] - 1) - input_ids.shape[1])
-  pos = -input_ids.shape[1]
-
+def prefill_with_prefix(model, input_ids, past_key_values):
+  pos = -1
   # 选取最后一个 token 作为 query
   input_ids = input_ids[:][pos:]
   # 选取除最后一个 token 的 KV Cache
@@ -42,7 +40,7 @@ def prefill_with_prefix(model, input_ids, past_key_values, prefix_hit_rate=1.0):
   start_time = time.perf_counter()
   outputs = model(
       input_ids=input_ids,
-      past_key_values=None,
+      past_key_values=past_key_values,
       use_cache=True,
   )
   end_time = time.perf_counter()
@@ -50,6 +48,19 @@ def prefill_with_prefix(model, input_ids, past_key_values, prefix_hit_rate=1.0):
 
   pred_token_ids = outputs.logits[:, -1, :].argmax(dim=-1)
   return outputs.past_key_values, elapsed_time, pred_token_ids
+
+def run_multi_turn(func, model, input_ids, past_key_values, num):
+  times = []
+  pred_token_ids = None
+
+  for _ in range(num):
+    _, time, pred = func(model, input_ids, past_key_values)
+    times.append(time)
+    if pred_token_ids is None:
+      pred_token_ids = pred.item()
+    assert(pred_token_ids == pred)
+
+  return sum(times) / len(times)
 
 def main():
   model_path = '/data/llm/longchat-7b-v1.5-32k'
@@ -61,23 +72,18 @@ def main():
                     ).eval()
   tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
-  prompt = generate_random_prompt(500, tokenizer)
+  prompt = generate_random_prompt(200, tokenizer)
   
   input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(model.device)
 
-  past_key_values, time_0, pred_0 = prefill_without_prefix(model, input_ids)
+  past_key_values, _, _ = prefill_without_prefix(model, input_ids, None)
 
-  _, time_1, pred_1 = prefill_without_prefix(model, input_ids)
+  time_0 = run_multi_turn(prefill_without_prefix, model, input_ids, past_key_values, 100)
 
-  _, time_2, pred_2 = prefill_without_prefix(model, input_ids)
-
-  # _, time_1, pred_1 = prefill_with_prefix(model, input_ids, past_key_values, 1.0)
-
-  assert(pred_0.item() == pred_1.item())
+  time_1 = run_multi_turn(prefill_with_prefix, model, input_ids, past_key_values, 100)
 
   print(f'time_0 = {time_0}')
   print(f'time_1 = {time_1}')
-  print(f'time_2 = {time_2}')
 
 if __name__ == '__main__':
   main()
