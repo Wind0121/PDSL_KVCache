@@ -40,7 +40,7 @@ def prefill_with_prefix(model, input_ids, past_key_values):
   start_time = time.perf_counter()
   outputs = model(
       input_ids=input_ids,
-      past_key_values=past_key_values,
+      past_key_values=new_key_values,
       use_cache=True,
   )
   end_time = time.perf_counter()
