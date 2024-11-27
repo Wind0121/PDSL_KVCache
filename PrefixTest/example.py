@@ -85,7 +85,7 @@ def run_multi_turn(model, input_ids, use_cache, prefix_hit_rate, num):
   return sum(times) / len(times) * 1000
 
 def main(args):
-  turn_num = 1
+  turn_num = 100
   model_path = '/data/llm/longchat-7b-v1.5-32k'
   model = AutoModelForCausalLM.from_pretrained(
                     model_path, 
