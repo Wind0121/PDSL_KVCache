@@ -30,6 +30,8 @@ def draw_data(time_list, file_prefix):
   plt.xlabel('Prompt Len')
   plt.ylabel('TTFT(ms)')
 
+  plt.grid(axis='y')
+
   plt.legend()
 
   plt.savefig(f'{file_prefix}_TTFT_Hit.png', dpi=300, bbox_inches='tight')
