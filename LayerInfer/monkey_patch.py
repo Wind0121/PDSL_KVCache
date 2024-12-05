@@ -6,5 +6,5 @@ def replace_llama(model):
   model.get_layer_num = types.MethodType(get_layer_num, model)
   model.embedding_input = types.MethodType(embedding_input, model)
   model.embedding_output = types.MethodType(embedding_output, model)
-  transformers.models.llama.modeling_llama.LlamaForCausalLM.forward = llama_for_causallm_forward
-  transformers.models.llama.modeling_llama.LlamaModel.forward = llama_model_forward
+  model.forward = types.MethodType(llama_for_causallm_forward, model)
+  model.model.forward = types.MethodType(llama_model_forward, model.model)

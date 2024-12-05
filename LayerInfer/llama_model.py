@@ -7,16 +7,7 @@ import warnings
 from transformers.cache_utils import Cache, DynamicCache
 from transformers.modeling_outputs import BaseModelOutputWithPast
 from transformers.utils import (
-  add_start_docstrings,
-  add_start_docstrings_to_model_forward,
-  is_flash_attn_greater_or_equal_2_10,
   logging,
-  replace_return_docstrings,
-)
-
-from transformers.models.llama.modeling_llama import (
-  LLAMA_INPUTS_DOCSTRING,
-  _CONFIG_FOR_DOC
 )
 
 from transformers.modeling_outputs import (
@@ -39,12 +30,9 @@ def embedding_output(self, hidden_states):
 
 def llama_for_causallm_forward(
     self,
-    input_ids: torch.LongTensor = None,
     attention_mask: Optional[torch.Tensor] = None,
     position_ids: Optional[torch.LongTensor] = None,
     past_key_values: Optional[Union[Cache, List[torch.FloatTensor]]] = None,
-    inputs_embeds: Optional[torch.FloatTensor] = None,
-    labels: Optional[torch.LongTensor] = None,
     use_cache: Optional[bool] = None,
     output_attentions: Optional[bool] = None,
     output_hidden_states: Optional[bool] = None,
@@ -65,13 +53,10 @@ def llama_for_causallm_forward(
     use_cache = use_cache if use_cache is not None else self.config.use_cache
     return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-    # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
     outputs = self.model(
-        input_ids=input_ids,
         attention_mask=attention_mask,
         position_ids=position_ids,
         past_key_values=past_key_values,
-        inputs_embeds=inputs_embeds,
         use_cache=use_cache,
         output_attentions=output_attentions,
         output_hidden_states=output_hidden_states,
@@ -89,11 +74,9 @@ def llama_for_causallm_forward(
 
 def llama_model_forward(
     self,
-    input_ids: torch.LongTensor = None,
     attention_mask: Optional[torch.Tensor] = None,
     position_ids: Optional[torch.LongTensor] = None,
     past_key_values: Optional[Union[Cache, List[torch.FloatTensor]]] = None,    # 以迭代为粒度更新，只用于构造信息，不参与注意力计算
-    inputs_embeds: Optional[torch.FloatTensor] = None,
     use_cache: Optional[bool] = None,
     output_attentions: Optional[bool] = None,
     output_hidden_states: Optional[bool] = None,
