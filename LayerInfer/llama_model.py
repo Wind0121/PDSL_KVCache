@@ -52,6 +52,7 @@ def llama_for_causallm_forward(
     cache_position: Optional[torch.LongTensor] = None,
     li_hidden_states: Optional[torch.FloatTensor] = None,
     layer_idx: Optional[int] = None,
+    cur_key_values: Optional[Union[Cache, List[torch.FloatTensor]]] = None,
 ) -> Union[Tuple, CausalLMOutputWithPast]:
     
     assert(li_hidden_states is not None)
@@ -78,6 +79,7 @@ def llama_for_causallm_forward(
         cache_position=cache_position,
         li_hidden_states=li_hidden_states,
         layer_idx=layer_idx,
+        cur_key_values=cur_key_values,
     )
 
     return CausalLMOutputWithPast(
@@ -90,15 +92,16 @@ def llama_model_forward(
     input_ids: torch.LongTensor = None,
     attention_mask: Optional[torch.Tensor] = None,
     position_ids: Optional[torch.LongTensor] = None,
-    past_key_values: Optional[Union[Cache, List[torch.FloatTensor]]] = None,
+    past_key_values: Optional[Union[Cache, List[torch.FloatTensor]]] = None,    # 以迭代为粒度更新，只用于构造信息，不参与注意力计算
     inputs_embeds: Optional[torch.FloatTensor] = None,
     use_cache: Optional[bool] = None,
     output_attentions: Optional[bool] = None,
     output_hidden_states: Optional[bool] = None,
     return_dict: Optional[bool] = None,
     cache_position: Optional[torch.LongTensor] = None,
-    li_hidden_states: Optional[torch.FloatTensor] = None,
-    layer_idx: Optional[int] = None,
+    li_hidden_states: Optional[torch.FloatTensor] = None,                       # 当前层的输入
+    layer_idx: Optional[int] = None,                                            # 当前进行到哪一层
+    cur_key_values: Optional[Union[Cache, List[torch.FloatTensor]]] = None,     # 以层为粒度更新，参与注意力计算
 ) -> Union[Tuple, BaseModelOutputWithPast]:
     
     assert(li_hidden_states is not None)
@@ -122,10 +125,7 @@ def llama_model_forward(
     ):  # kept for BC (non `Cache` `past_key_values` inputs)
         return_legacy_cache = True
         past_key_values = DynamicCache.from_legacy_cache(past_key_values)
-        logger.warning_once(
-            "We detected that you are passing `past_key_values` as a tuple and this is deprecated and will be removed in v4.43. "
-            "Please use an appropriate `Cache` class (https://huggingface.co/docs/transformers/v4.41.3/en/internal/generation_utils#transformers.Cache)"
-        )
+        cur_key_values = DynamicCache.from_legacy_cache(cur_key_values)
 
     # cache_position: (seq_len, )
     if cache_position is None:
@@ -155,7 +155,7 @@ def llama_model_forward(
         hidden_states,
         attention_mask=causal_mask, # 包含了因果掩码和传入的注意力掩码 
         position_ids=position_ids,
-        past_key_value=past_key_values,
+        past_key_value=cur_key_values,
         output_attentions=output_attentions,
         use_cache=use_cache,
         cache_position=cache_position,

@@ -2,6 +2,7 @@ from transformers import AutoTokenizer, LlamaForCausalLM
 import torch
 from monkey_patch import replace_llama
 import warnings
+import time
 warnings.filterwarnings("ignore")
 
 def load_model(model_path):
@@ -16,34 +17,38 @@ def load_model(model_path):
 
   return model, tokenizer
 
-def greedy_generate_token(model, input_ids):
+def greedy_generate_token(model, input_ids, use_cache=False, past_key_values=None):
   hidden_states = model.embedding_input(input_ids)
   layer_num = model.get_layer_num()
+  cur_key_values = past_key_values
   for layer_idx in range(layer_num):
     outputs = model(li_hidden_states=hidden_states,
                     layer_idx=layer_idx,
-                    past_key_values=None,
+                    past_key_values=past_key_values,
+                    cur_key_values=cur_key_values,
                     output_attentions=False,
                     output_hidden_states=False,
-                    use_cache=False,
+                    use_cache=use_cache,
                     return_dict=True
                     )
     hidden_states = outputs.hidden_states[-1]
+    cur_key_values = outputs.past_key_values
   logits = model.embedding_output(hidden_states)
-  pred_token_idx = logits[:, -1, :].argmax(dim=-1).unsqueeze(1)
-  return pred_token_idx
+  return logits, cur_key_values
 
-def generate(model, tokenizer, prompt, max_len):
+def generate(model, tokenizer, prompt, max_len, use_cache):
   prompt = "USER: " + prompt + "\n\nASSISTANT: "
   print(f'\n{prompt}', end='')
   input_ids = tokenizer(prompt, return_tensors='pt').input_ids.to(model.device)
+  past_key_values = None
   generated_ids = []
   pos = 0
 
   for _ in range(max_len):
-    pred_token_idx = greedy_generate_token(model, input_ids)
+    logits, past_key_values = greedy_generate_token(model, input_ids, use_cache, past_key_values)
+    pred_token_idx = logits[:, -1, :].argmax(dim=-1).unsqueeze(1)
     generated_ids.append(pred_token_idx.item())
-    input_ids = torch.cat([input_ids, pred_token_idx], dim=1)
+    input_ids = pred_token_idx if use_cache else torch.cat([input_ids, pred_token_idx], dim=1)
     generated_text = (
         tokenizer.decode(
             generated_ids,
@@ -72,7 +77,7 @@ def main():
 
   prompt = 'What is your name'
 
-  generate(model, tokenizer, prompt, 100)
+  generate(model, tokenizer, prompt, 100, True)
 
 if __name__ == '__main__':
   main()
