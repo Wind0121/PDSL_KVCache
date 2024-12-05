@@ -16,7 +16,7 @@ def load_model(model_path):
 
   return model, tokenizer
 
-def greedy_generate(model, input_ids):
+def greedy_generate_token(model, input_ids):
   hidden_states = model.embedding_input(input_ids)
   layer_num = model.get_layer_num()
   for layer_idx in range(layer_num):
@@ -41,7 +41,7 @@ def generate(model, tokenizer, prompt, max_len):
   pos = 0
 
   for _ in range(max_len):
-    pred_token_idx = greedy_generate(model, input_ids)
+    pred_token_idx = greedy_generate_token(model, input_ids)
     generated_ids.append(pred_token_idx.item())
     input_ids = torch.cat([input_ids, pred_token_idx], dim=1)
     generated_text = (

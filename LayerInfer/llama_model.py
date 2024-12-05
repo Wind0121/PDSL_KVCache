@@ -161,7 +161,6 @@ def llama_model_forward(
         cache_position=cache_position,
         position_embeddings=position_embeddings,
     )
-    logger.info(f'Decoding layer idx {layer_idx}')
 
     # 得到这一层的输出，同时也是下一层的输入
     hidden_states = layer_outputs[0]
